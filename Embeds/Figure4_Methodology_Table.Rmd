@@ -1,0 +1,100 @@
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(comment = FALSE, message = FALSE, warning = FALSE, echo = FALSE
+)
+
+library(DT)
+library(RPostgreSQL)
+library(formattable)
+library(knitr)
+library(dplyr)
+library(sf)
+# devtools::install_github('bhaskarvk/leaflet.extras')
+library(htmltools)
+# install.packages("rmapshaper")
+
+```
+<style type="text/css">
+  h1{
+  font-family: tiempos-light;
+  color: #000000;
+  font-size: 24px;
+  font-weight: bold;
+  }
+  h2{
+   font-family: tiempos-light;
+  color: #000000;
+    font-size: 24px;
+      font-weight: bold;
+
+  }
+  h3{
+   font-family: tiempos-light;
+  color: #000000;
+  }
+  a{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  ul{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  ol{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  body{
+  font-family: tiempos-light;
+  color: #000000;
+}
+</style>
+
+# JESI Components & Service Categories Table
+```{r}
+# pull data
+ntee_codes <- st_read(con, query = "SELECT * from jeni_jesi_2021.jesi_codes_public")
+
+
+
+#create and format table
+datatable(ntee_codes,
+class = 'cell-border stripe',
+colnames=c(
+'JESI Component'='jesi_component',
+'JESI Service Category'='jesi_category',
+'NTEE Code'='ntee_code',
+'IRS Common Code Description'='common_code_description',
+'IRS NTEE Code Description'='ntee_description',
+'JESI Organization Count'='organization_count'
+),
+# style ='default',
+rownames = FALSE,
+# filter ='top',
+extensions = c(
+  # 'Scroller',
+  # 'FixedHeader',
+               'Buttons'
+               # ,'KeyTable', 'FixedColumns'
+               ),
+options = list(autoWidth = TRUE, pageLength=5,
+  dom = 'Bfrtip',
+  buttons = c('csv','excel')
+# ,
+# scrollX = T,
+# scroller = TRUE
+  # columnDefs = list(list(width = '200px', targets = c(1,23))),
+
+
+#, searchHighlight = TRUE
+)
+,
+caption = htmltools::tags$caption(
+style = 'caption-side: bottom; text-align: left;',
+htmltools::strong('This table includes the full list of the IRS\' National Taxonomy of Exempt Entities (NTEE) Codes included in the JESI. NTEE Codes represent an organization\'s primary exempt activity. Common codes are larger groupings of NTEE Codes used by the IRS.'))
+# ,
+# htmltools::tags$span("Blue denotes the indicator estimate is above the county median.", style="color:cornflowerblue;"),
+# htmltools::tags$span("Green denotes the indicator estimate is below the county median.", style="color:olivedrab;"))
+
+)
+``` 

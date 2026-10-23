@@ -1,0 +1,890 @@
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(comment = FALSE, message = FALSE, warning = FALSE, echo = FALSE
+)
+
+library(DT)
+library(RPostgreSQL)
+library(formattable)
+library(knitr)
+library(dplyr)
+library(sf)
+library(leaflet)
+# devtools::install_github('bhaskarvk/leaflet.extras')
+library("leaflet.extras")
+library(htmltools)
+# install.packages("rmapshaper")
+library(rmapshaper)
+
+```
+
+<style type="text/css">
+  h1{
+  font-family: tiempos-light;
+  color: #000000;
+  font-size: 24px;
+  font-weight: bold;
+  }
+  h2{
+   font-family: tiempos-light;
+  color: #000000;
+    font-size: 24px;
+      font-weight: bold;
+
+  }
+  h3{
+   font-family: tiempos-light;
+  color: #000000;
+  }
+  a{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  ul{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  ol{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  body{
+  font-family: tiempos-light;
+  color: #000000;
+}
+
+
+.legend {
+    width:325px;
+    opacity:  1;
+     border-left:1px solid #737373;
+    border-right:1px solid #737373;
+    border-top:1px solid #737373;
+    border-bottom:1px solid #737373;
+}
+.leaflet-touch .leaflet-control-layers {
+  border-left:1px solid #737373;
+    border-right:1px solid #737373;
+    border-top:1px solid #737373;
+    border-bottom:1px solid #737373;
+}
+
+.leaflet-popup-scrolled {
+  max-height: 420px;
+  overflow: auto;
+  padding-left: 2%;
+  border-bottom: 1px solid #ddd;
+  border-top: 1px solid #ddd;
+}
+
+.leaflet-left .leaflet-control {
+  background-color: white;
+  opacity: 1.0;
+}
+
+.leaflet-control-layers .leaflet-control .leaflet-control-layers-expanded {
+  background-color: white;
+  opacity: 1.0;
+}
+
+.info {
+    padding: 6px 8px;
+    font-size: 12px;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgb(0 0 0 / 20%);
+    border-radius: 5px;
+}
+
+.hidden {
+  display: none;
+}
+
+.jesi-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #F2F0F7; 
+}
+.jesi-lowest-bg-color {
+  background-color: #F2F0F7; 
+}
+.jesi-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #CBC9E2; 
+}
+.jesi-low-bg-color {
+  background-color: #CBC9E2; 
+}
+.jesi-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #9391BF; 
+}
+.jesi-moderate-bg-color {
+  background-color: #9391BF; 
+}
+.jesi-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #605DA2; 
+}
+.jesi-high-bg-color {
+  background-color: #605DA2; 
+}
+.jesi-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #54278f; 
+}
+
+.jesi-highest-bg-color {
+  background-color: #54278f; 
+}
+
+
+.health-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #EDF8E9; 
+}
+
+.health-lowest-bg-color {
+  background-color: #EDF8E9; 
+}
+
+.health-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #BAE4B3; 
+}
+
+.health-low-bg-color {
+  background-color: #BAE4B3; 
+}
+
+.health-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #66AB5D; 
+}
+
+.health-moderate-bg-color {
+  background-color: #66AB5D; 
+}
+
+.health-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #168219; 
+}
+
+.health-high-bg-color {
+  background-color: #168219; 
+}
+
+.health-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #006416; 
+}
+
+.health-highest-bg-color {
+  background-color: #006416; 
+}
+
+.house-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #EFF3FF; 
+}
+
+.house-lowest-bg-color {
+  background-color: #EFF3FF; 
+}
+
+.house-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #BDD7E7; 
+}
+
+.house-low-bg-color {
+  background-color: #BDD7E7; 
+}
+
+.house-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #5BA7C5; 
+}
+
+.house-moderate-bg-color {
+  background-color: #5BA7C5; 
+}
+
+.house-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #2182A9; 
+}
+
+.house-high-bg-color {
+  background-color: #2182A9; 
+}
+
+.house-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #015693; 
+}
+
+.house-highest-bg-color {
+  background-color: #015693; 
+}
+
+.preven-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #F1F1C2; 
+}
+
+.preven-lowest-bg-color {
+  background-color: #F1F1C2; 
+}
+
+.preven-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #EEEE88; 
+}
+
+.preven-low-bg-color {
+  background-color: #EEEE88; 
+}
+
+.preven-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #FFFF00; 
+}
+
+.preven-moderate-bg-color {
+  background-color: #FFFF00; 
+}
+
+.preven-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #D2D200; 
+}
+
+.preven-high-bg-color {
+  background-color: #D2D200; 
+}
+
+.preven-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #A6A600; 
+}
+
+.preven-highest-bg-color {
+  background-color: #A6A600; 
+}
+
+.fam-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #BDDCD8; 
+}
+
+.fam-lowest-bg-color {
+  background-color: #BDDCD8; 
+}
+
+.fam-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #9ED1CB; 
+}
+
+.fam-low-bg-color {
+  background-color: #9ED1CB; 
+}
+
+.fam-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #22B5A4; 
+}
+
+.fam-moderate-bg-color {
+  background-color: #22B5A4; 
+}
+
+.fam-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #018F88; 
+}
+
+.fam-high-bg-color {
+  background-color: #018F88; 
+}
+
+.fam-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #005254; 
+}
+
+.fam-highest-bg-color {
+  background-color: #005254; 
+}
+
+.category-color-error {
+  background-color: red; 
+}
+
+.zipcode-title {
+  font-size: 1.5em;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.progress-bar {
+  width: 95%;
+  display: flex;
+  height: 1em;
+  background-color: #FBFBFB;
+  box-shadow: 0 0 1px black;
+  border-radius: 0.25em;
+  position: relative;
+}
+.progress {
+  position: absolute;
+  width: 50%;
+  height: 100%;
+  border-radius: 0.25em;
+  
+}
+.progress-jesi {
+  position: absolute;
+  height: 100%;
+  width: 0%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+  
+}
+
+.progress-health {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+
+}
+
+.progress-house {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+}
+
+.progress-preven {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+}
+
+.progress-fam {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+}
+
+.square-icon {
+  height: 16px;
+  width: 16px;
+  margin-right: 2px;
+  border-radius: 0.25em;
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  box-shadow: 0 0 1px black;
+}
+</style>
+
+# Justice Equity Services Index (JESI) Results
+
+```{r}
+
+#purples
+pal_impact <- colorBin(palette = c("#54278f","#605DA2", "#9391BF", "#CBC9E2","#F2F0F7" ), domain = jesi$jesi_pctl, bins = 5, reverse = TRUE, pretty = FALSE)
+
+
+#create popup
+popup <- paste("<div class='hasjesi'><div class='leaflet-data' data-zip='", jesi$zipcode,
+               "' data-neighborhood='",jesi$lat_neighborhood,
+               "' data-jesi-pctl='",jesi$jesi_pctl,
+               "' data-jesi-category='",jesi$jesi_category,
+               "' data-jesi-rank='",jesi$jesi_rank,
+               "' data-population='",prettyNum(jesi$population_count, big.mark = ",", preserve.width = "none"),
+               "' data-sd-number='",jesi$sd_number,
+               "' data-sd-name='",jesi$sd_name,
+               "' data-spa-number='",jesi$spa_number,
+               "' data-spa-name='",jesi$spa_name,
+               "' data-health-category='",jesi$c1_health_well_category,
+               "' data-house-category='",jesi$c2_housing_emp_category,
+               "' data-preven-category='",jesi$c3_preven_inter_category,
+               "' data-fam-category='",jesi$c4_fam_comm_category,
+               "' data-health-pctl='",jesi$c1_health_well_pctl,
+               "' data-house-pctl='",jesi$c2_housing_emp_pctl,
+               "' data-preven-pctl='",jesi$c3_preven_inter_pctl,
+               "' data-fam-pctl='",jesi$c4_fam_comm_pctl,
+               "' data-total-health-services='",jesi$c1_health_well_raw_count,
+               "' data-physical-health-services='",jesi$phys_health_raw_count,
+               "' data-behavioral-health-services='",jesi$behav_health_raw_count,
+               "'></div></div>")
+
+
+# create custom legend labels
+labels <- c(
+"Lowest (0-19th Percentile)",
+"Low (20-39th Percentile)",
+"Moderate (40-59th Percentile)",
+"High (60-79th Percentile)",
+"Highest (80-100th Percentile)")
+
+# build map
+leaflet(jesi, width = "100%", height = "600px", options = leafletOptions(zoomControl = FALSE)) %>%
+
+# add base map
+# new code: add base map
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=", carto_key),
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    ) %>%
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png?key=", carto_key),
+      # attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      options = providerTileOptions(pane = "markerPane") # retain unique setting 
+    ) %>%
+# add map panes
+addMapPane("index_pane", zIndex = 400) %>%
+addMapPane("missing_pane", zIndex = 410) %>% 
+  addMapPane("jeni", zIndex = 415) %>%
+addMapPane("sds_pane", zIndex = 420) %>%
+addMapPane("spas_pane", zIndex = 420) %>%
+
+
+# set view and layer control
+  setView(-118.6368454, 34.2324274, zoom = 8.5) %>%
+addLayersControl(overlayGroups = c("Supervisorial Districts","Service Planning Areas", "JENI - High/Highest Need ZIP Codes"), options = layersControlOptions(collapsed = FALSE, autoZIndex = TRUE)) %>%
+  
+# create sidebar and add html for content
+addControl(html='<div class="leaflet-popup-scrolled"><div class="zipcode-header"  style="margin-bottom: 8px; margin-top: 8px;"><span class="square-icon"></span><span class="zip" style="font-size: 16px; font-weight: bold;"></span></div><span style="font-size: 12px; font-weight:bold; line-height: 1.5em;">JESI Percentile*:<span class="jesi-pctl" style="font-size: 12px; font-weight: bold;"></span> |
+<span class="jesi-category color-format-jesi" style="font-size: 12px; font-weight:bold;"></span><br/><div class="progress-bar"><div class="progress-jesi"></div></div><br/>Component Percentiles*</span><br/><span style="font-size: 12px; line-height: 1.5em;">Health & Wellness:<span class="health-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-health"></div></div><br/>Housing & Employment:<span class="house-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-house"></div></div><br/>Prevention & Intervention:<span class="preven-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-preven"></div></div><br/>Community Sevices & Advocacy:<span class="fam-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-fam"></div></div><br/><br/><span style="line-height: 1.5em; display: block; width: 95%;"><span class="zip-details" style="font-size: 12px; font-weight: bold;"></span> has a <span class="jesi-category-details color-format-jesi"></span> overall service level. It also scores <span class="health-category color-format-health"></span> on Health & Wellness,
+<span class="house-category color-format-house"></span>
+on Housing & Employment, <span class="preven-category color-format-preven"></span> on Prevention & Intervention, and  <span class="fam-category color-format-fam"></span> on Community Services & Advocacy.<br/><br/>Neighborhood: <span class="neighborhood" style="font-size: 12px; font-weight: bold;"></span><br/>JESI Rank: <span class="jesi-rank" style="font-size: 12px; font-weight: bold;"></span> out of 277 ZIP Codes<br/>Population: <span class="population" style="font-size: 12px; font-weight: bold;"></span><br/>Supervisorial District: <span class="sd-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="sd-name" style="font-size: 12px; font-weight: bold;"></span><br/>Service Planning Area: <span class="spa-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="spa-name" style="font-size: 12px; font-weight: bold;"></span></span><br/><br/><span style="font-size: 10px; font-style: italic;">*Percentiles range from 0-100. A higher percentile means a higher level of services in that area.</span></span></div>', position = "topleft") %>%
+  
+# add polygons for JESI ZIP Codes
+addPolygons(color = "black", 
+            weight = 1, 
+            smoothFactor = 0.5, 
+            opacity = 1.0,
+            fillOpacity = .8, 
+            fillColor = ~pal_impact(jesi_pctl), 
+            highlight = highlightOptions(color = "white", 
+                                         weight = 5, 
+                                         bringToFront = TRUE, 
+                                         sendToBack = TRUE), 
+popup = ~popup,
+group = "JESI", options = pathOptions(pane = "index_pane")) %>%
+
+# add polygons for ZIP Codes wit no JESI
+  addPolygons(data=nojesi,
+              color="#444444", 
+              weight = 1, 
+              smoothFactor = 0.5, 
+              fillOpacity = .8, 
+              fillColor ="#808080", 
+              highlight = highlightOptions(color = "#444444", 
+                                           weight = 3, 
+                                           bringToFront = TRUE, 
+                                           sendToBack = TRUE),
+              popup = ~paste0("ZIP Code:<b> ", nojesi$zipcode, "</b></br>",
+                              "No JESI Available</br>Population:<b> ", 
+                              nojesi$population_count, "</b></br>"),
+              options = pathOptions(pane = "missing_pane"))%>%  
+  
+# add boundaries for SPAs and SDs
+addPolygons(data = sds, 
+            opacity = 1.0,
+            dashArray = "10 5",
+            fillOpacity=0, 
+            color = "black", 
+            weight = 2.5, 
+            label=~distname, 
+            group = "Supervisorial Districts", 
+            options = pathOptions(pane = "sds_pane", 
+                                  interactive = FALSE), 
+            highlight = highlightOptions(color = "white", 
+                                         weight = 3, 
+                                         bringToFront = TRUE)) %>%
+  addPolygons(data = spas,
+              opacity = 1.0,
+              dashArray="5 5",
+              fillOpacity=0, 
+              color = "black", 
+              weight = 2.5, 
+              label=~spa_2012, 
+              group = "Service Planning Areas", 
+              options = pathOptions(pane = "spas_pane", 
+                                    interactive = FALSE), 
+              highlight = highlightOptions(color = "white", 
+                                           weight = 3, 
+                                           bringToFront = TRUE)) %>%  
+
+# add boundaries for highest need JENI Zips
+addPolygons(data = jeni_highest, 
+            opacity = 1.0,
+            fillOpacity=0, 
+            color = "black", 
+            weight = 2.5, 
+            label=~zipcode, 
+            group = "JENI - High/Highest Need ZIP Codes", 
+            options = pathOptions(pane = "jeni", 
+                                  interactive = FALSE), 
+            highlight = highlightOptions(color = "white", 
+                                         weight = 3, 
+                                         bringToFront = TRUE)) %>% 
+
+    #add combined legend  
+   addLegend(position = "bottomleft",
+            title="JESI Service Level",
+            labels = c("Lowest (0-19th Percentile)", "Low (20-39th Percentile)",
+                       "Moderate (40-59th Percentile)", "High (60-79th Percentile)","Highest (80-100th Percentile)", "JESI Not Available"),
+            colors= c( "#f2f0f7","#cbc9e2","#9391BF", "#605DA2", "#54278f", "#808080"), opacity=1.0)%>%
+
+  
+  # layers control
+  addLayersControl(
+    overlayGroups =  c("JENI - High/Highest Need ZIP Codes",
+      "Supervisorial Districts",
+      "Service Planning Areas"),
+    options = layersControlOptions(collapsed = TRUE),position = "topright")  %>%
+ hideGroup("Supervisorial Districts") %>%
+  hideGroup("Service Planning Areas")%>%
+    hideGroup("JENI - High/Highest Need ZIP Codes")%>%
+ htmlwidgets::onRender("
+        function() {
+            $('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:left\">Click to view</label>');
+            L.control.zoom({ position: 'topright' }).addTo(this);
+        }
+    ")
+
+```
+<span style='float: right; font-size: 12px;'>Catalyst California (formerly Advancement Project California); Justice Equity Services Index; <u>[catalystcalifornia.org](https://www.catalystcalifornia.org/campaign-tools/maps-and-data/justice-equity-services-index)</u>, 2021.</span style>
+
+```{js}
+// This function is used to color code degrees of JESI index ratings in popup feature
+// Elements include: square icon, main index progress bar, and "lowest" to "highest" keywords
+
+
+<!-- Captures  -->
+var mapsPlaceholder = [];
+L.Map.addInitHook(function () {
+  mapsPlaceholder.push(this);
+  mapsPlaceholder.forEach(map => {
+    map.on('popupopen', (e) => {
+    
+    let popups = document.querySelectorAll('.leaflet-data');
+    console.log(popups);
+
+// hides popup for zipcodes with jesi data (i.e. only popup for zips with no data)
+document.querySelectorAll('.hasjesi').forEach(hasjesi => {
+hasjesi.parentElement.parentElement.parentElement.classList.add('hidden')
+})
+
+popups.forEach((popup) => {  
+    
+document.querySelector('.zip').innerHTML = popup.getAttribute('data-zip')
+document.querySelector('.neighborhood').innerHTML = popup.getAttribute('data-neighborhood')
+document.querySelector('.jesi-pctl').innerHTML = popup.getAttribute('data-jesi-pctl')
+document.querySelector('.jesi-category').innerHTML = popup.getAttribute('data-jesi-category')
+document.querySelector('.jesi-rank').innerHTML = popup.getAttribute('data-jesi-rank')
+document.querySelector('.population').innerHTML = popup.getAttribute('data-population')
+document.querySelector('.sd-number').innerHTML = popup.getAttribute('data-sd-number')
+document.querySelector('.sd-name').innerHTML = popup.getAttribute('data-sd-name')
+document.querySelector('.spa-number').innerHTML = popup.getAttribute('data-spa-number')
+document.querySelector('.spa-name').innerHTML = popup.getAttribute('data-spa-name')
+document.querySelector('.zip-details').innerHTML = popup.getAttribute('data-zip')
+document.querySelector('.jesi-category-details').innerHTML = popup.getAttribute('data-jesi-category')
+document.querySelector('.health-category').innerHTML = popup.getAttribute('data-health-category')
+document.querySelector('.house-category').innerHTML = popup.getAttribute('data-house-category')
+document.querySelector('.preven-category').innerHTML = popup.getAttribute('data-preven-category')
+document.querySelector('.fam-category').innerHTML = popup.getAttribute('data-fam-category')
+document.querySelector('.health-pctl').innerHTML = popup.getAttribute('data-health-pctl')
+document.querySelector('.house-pctl').innerHTML = popup.getAttribute('data-house-pctl')
+document.querySelector('.preven-pctl').innerHTML = popup.getAttribute('data-preven-pctl')
+document.querySelector('.fam-pctl').innerHTML = popup.getAttribute('data-fam-pctl')
+
+let components = ["jesi", "health", "house", "preven", "fam"]
+  components.forEach(component => {
+ 
+      let nodes = document.querySelectorAll('.color-format-' + component);
+          nodes.forEach(el => {
+              let categoryClasses = [component + "-lowest", component + "-low", component + "-moderate", component +                    "-high", component + "-highest", "category-color-error"]
+                      categoryClasses.forEach(categoryClass => {
+                          el.classList.remove(categoryClass)
+                      })
+                          console.log(el.innerHTML.trim())
+                          if (el.innerHTML.trim() == "Lowest") {
+                              el.classList.add(component + '-lowest');
+                          } else if (el.innerHTML.trim() == "Low") {
+                              el.classList.add(component + '-low');
+                          } else if (el.innerHTML.trim() == "Moderate") {
+                              el.classList.add(component + '-moderate');
+                          } else if (el.innerHTML.trim() == "High") {
+                              el.classList.add(component + '-high');
+                          } else if (el.innerHTML.trim() == "Highest") {
+                              el.classList.add(component + '-highest');
+                          } else {
+                              el.classList.add('category-color-error');
+                          }
+                          }
+                          
+                          )
+                          
+                          
+let progressBar = document.querySelector('.progress-' + component)
+let classes = [component + "-lowest-bg-color", component + "-low-bg-color", component + "-moderate-bg-color", component + "-high-bg-color", component + "-highest-bg-color"]
+   classes.forEach(class_ => {
+   progressBar.classList.remove(class_)
+   })
+progressBar.style.width = popup.getAttribute('data-' + component + '-pctl').trim() + "%"
+category = popup.getAttribute('data-' + component + '-category').trim()
+if (category == "Lowest") {
+    progressBar.classList.add(component + '-lowest-bg-color');
+} else if (category == "Low") {
+    progressBar.classList.add(component + '-low-bg-color');
+} else if (category == "Moderate") {
+    progressBar.classList.add(component + '-moderate-bg-color');
+} else if (category == "High") {
+    progressBar.classList.add(component + '-high-bg-color');
+} else if (category.trim() == "Highest") {
+    progressBar.classList.add(component + '-highest-bg-color');
+} else {
+    progressBar.classList.add('category-color-error');
+}
+                          })
+let block = document.querySelector('.square-icon')
+classes = ["jesi-lowest-bg-color", "jesi-low-bg-color", "jesi-moderate-bg-color", "jesi-high-bg-color", "jesi-highest-bg-color"]
+   classes.forEach(class_ => {
+   block.classList.remove(class_)
+   })
+jesiCategory = popup.getAttribute('data-jesi-category').trim()
+if (jesiCategory == "Lowest") {
+    block.classList.add('jesi-lowest-bg-color');
+} else if (jesiCategory == "Low") {
+    block.classList.add('jesi-low-bg-color');
+} else if (jesiCategory == "Moderate") {
+    block.classList.add('jesi-moderate-bg-color');
+} else if (jesiCategory == "High") {
+    block.classList.add('jesi-high-bg-color');
+} else if (jesiCategory.trim() == "Highest") {
+    block.classList.add('jesi-highest-bg-color');
+} else {
+    block.classList.add('category-color-error');
+}
+
+
+      })})})})
+
+
+```

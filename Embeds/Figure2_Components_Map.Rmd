@@ -1,0 +1,1351 @@
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(comment = FALSE, message = FALSE, warning = FALSE, echo = FALSE
+)
+
+library(DT)
+library(RPostgreSQL)
+library(formattable)
+library(knitr)
+library(dplyr)
+library(sf)
+library(leaflet)
+# devtools::install_github('bhaskarvk/leaflet.extras')
+library("leaflet.extras")
+library(htmltools)
+# install.packages("rmapshaper")
+library(rmapshaper)
+
+
+ 
+```
+
+
+<style type="text/css">
+  h1{
+  font-family: tiempos-light;
+  color: #000000;
+  font-size: 24px;
+  font-weight: bold;
+  }
+  h2{
+   font-family: tiempos-light;
+  color: #000000;
+    font-size: 24px;
+      font-weight: bold;
+
+  }
+  h3{
+   font-family: tiempos-light;
+  color: #000000;
+  }
+  a{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  ul{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  ol{
+  font-family: tiempos-light;
+  color: #000000;
+  }
+  body{
+  font-family: tiempos-light;
+  color: #000000;
+}
+
+
+.legend {
+    width:325px;
+    opacity: 1;
+    border-left:1px solid #737373;
+    border-right:1px solid #737373;
+    border-top:1px solid #737373;
+    border-bottom:1px solid #737373;
+}
+
+.leaflet-touch .leaflet-control-layers {
+  border-left:1px solid #737373;
+  border-right:1px solid #737373;
+  border-top:1px solid #737373;
+  border-bottom:1px solid #737373;
+}
+
+.leaflet-popup-scrolled {
+  max-height: 420px;
+  overflow: auto;
+  padding-left: 2%;
+  border-bottom: 1px solid #ddd;
+  border-top: 1px solid #ddd;
+}
+
+.leaflet-left .leaflet-control {
+  background-color: white;
+  opacity: 1.0;
+}
+
+.leaflet-control-layers .leaflet-control .leaflet-control-layers-expanded {
+  background-color: white;
+  opacity: 1.0;
+}
+
+.info {
+    padding: 6px 8px;
+    font-size: 12px;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgb(0 0 0 / 20%);
+    border-radius: 5px;
+}
+
+
+.hidden {
+  display: none;
+}
+
+.jesi-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #F2F0F7; 
+}
+.jesi-lowest-bg-color {
+  background-color: #F2F0F7; 
+}
+.jesi-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #CBC9E2; 
+}
+.jesi-low-bg-color {
+  background-color: #CBC9E2; 
+}
+.jesi-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #9391BF; 
+}
+.jesi-moderate-bg-color {
+  background-color: #9391BF; 
+}
+.jesi-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #605DA2; 
+}
+.jesi-high-bg-color {
+  background-color: #605DA2; 
+}
+.jesi-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #54278f; 
+}
+
+.jesi-highest-bg-color {
+  background-color: #54278f; 
+}
+
+.health-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #EDF8E9; 
+}
+
+.health-lowest-bg-color {
+  background-color: #EDF8E9; 
+}
+
+.health-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #BAE4B3; 
+}
+
+.health-low-bg-color {
+  background-color: #BAE4B3; 
+}
+
+.health-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #66AB5D; 
+}
+
+.health-moderate-bg-color {
+  background-color: #66AB5D; 
+}
+
+.health-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #168219; 
+}
+
+.health-high-bg-color {
+  background-color: #168219; 
+}
+
+.health-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #006416; 
+}
+
+.health-highest-bg-color {
+  background-color: #006416; 
+}
+
+.house-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #EFF3FF; 
+}
+
+.house-lowest-bg-color {
+  background-color: #EFF3FF; 
+}
+
+.house-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #BDD7E7; 
+}
+
+.house-low-bg-color {
+  background-color: #BDD7E7; 
+}
+
+.house-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #5BA7C5; 
+}
+
+.house-moderate-bg-color {
+  background-color: #5BA7C5; 
+}
+
+.house-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #2182A9; 
+}
+
+.house-high-bg-color {
+  background-color: #2182A9; 
+}
+
+.house-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #015693; 
+}
+
+.house-highest-bg-color {
+  background-color: #015693; 
+}
+
+.preven-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #F1F1C2; 
+}
+
+.preven-lowest-bg-color {
+  background-color: #F1F1C2; 
+}
+
+.preven-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #EEEE88; 
+}
+
+.preven-low-bg-color {
+  background-color: #EEEE88; 
+}
+
+.preven-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #FFFF00; 
+}
+
+.preven-moderate-bg-color {
+  background-color: #FFFF00; 
+}
+
+.preven-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #D2D200; 
+}
+
+.preven-high-bg-color {
+  background-color: #D2D200; 
+}
+
+.preven-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #A6A600; 
+}
+
+.preven-highest-bg-color {
+  background-color: #A6A600; 
+}
+
+.fam-lowest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: black;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #BDDCD8; 
+}
+
+.fam-lowest-bg-color {
+  background-color: #BDDCD8; 
+}
+
+.fam-low {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #9ED1CB; 
+}
+
+.fam-low-bg-color {
+  background-color: #9ED1CB; 
+}
+
+.fam-moderate {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #22B5A4; 
+}
+
+.fam-moderate-bg-color {
+  background-color: #22B5A4; 
+}
+
+.fam-high {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #018F88; 
+}
+
+.fam-high-bg-color {
+  background-color: #018F88; 
+}
+
+.fam-highest {
+  font-size: 12px; 
+  font-weight: bold;
+  color: white;
+  border-radius: 4px;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  margin: 4px;
+  background-color: #005254; 
+}
+
+.fam-highest-bg-color {
+  background-color: #005254; 
+}
+
+.category-color-error {
+  
+  background-color: white; 
+}
+
+.progress-bar {
+  width: 95%;
+  display: flex;
+  height: 1.25em;
+  background-color: #FBFBFB;
+  border-radius: 0.25em;
+  position: relative;
+}
+
+.progress {
+  position: absolute;
+  width: calc(var(--width, 0) * 1%);
+  height: 100%;
+  border-radius: 0.25em;
+  
+}
+
+.progress-jesi {
+  position: absolute;
+  height: 100%;
+  width: 0%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+  
+}
+
+.progress-health {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+}
+
+
+.progress-house {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+  
+}
+
+
+.progress-preven {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+  
+}
+
+
+.progress-fam {
+  position: absolute;
+  width: 0%;
+  height: 100%;
+  border-radius: 0.25em;
+  box-shadow: 0 0 1px black;
+  
+}
+
+.square-icon {
+  height: 16px;
+  width: 16px;
+  margin-right: 2px;
+  border-radius: 0.25em;
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  box-shadow: 0 0 1px black;
+  
+}
+
+.zipcode-title {
+  font-size: 1.5em;
+  font-weight: bold;
+  display: inline-block;
+}
+</style>
+
+# Justice Equity Services Index (JESI) Component Results {.tabset .tabset-fade}
+
+## Health & Wellness
+
+```{r}
+
+# risk: [ "rgb(237,248,233)", "rgb(186,228,179)", "rgb(116,196,118)", "rgb(49,163,84)", "rgb(0,109,44)" ],​
+
+
+
+#green
+pal_impact <- colorBin(palette = c("#006416","#168219", "#66AB5D", "#bae4b3","#edf8e9" ), domain = jesi$c1_health_well_pctl, bins = 5, reverse = TRUE, pretty = FALSE)
+
+
+# #create popup
+popup <- paste("<div class='hasjesi'><div class='health-leaflet-data' data-zip='", jesi$zipcode,
+               "' data-neighborhood='",jesi$lat_neighborhood,
+               "' data-jesi-pctl='",jesi$jesi_pctl,
+               "' data-jesi-category='",jesi$jesi_category,
+               "' data-jesi-rank='",jesi$jesi_rank,
+               "' data-population='",prettyNum(jesi$population_count, big.mark = ",", preserve.width = "none"),
+               "' data-sd-number='",jesi$sd_number,
+               "' data-sd-name='",jesi$sd_name,
+               "' data-spa-number='",jesi$spa_number,
+               "' data-spa-name='",jesi$spa_name,
+               "' data-health-category='",jesi$c1_health_well_category,
+               "' data-house-category='",jesi$c2_housing_emp_category,
+               "' data-preven-category='",jesi$c3_preven_inter_category,
+               "' data-fam-category='",jesi$c4_fam_comm_category,
+               "' data-health-pctl='",jesi$c1_health_well_pctl,
+               "' data-house-pctl='",jesi$c2_housing_emp_pctl,
+               "' data-preven-pctl='",jesi$c3_preven_inter_pctl,
+               "' data-fam-pctl='",jesi$c4_fam_comm_pctl,
+               "' data-total-health-services='",jesi$c1_health_well_raw_count,
+               "' data-physical-health-services='",jesi$phys_health_raw_count,
+               "' data-behavioral-health-services='",jesi$behav_health_raw_count,
+               "' data-total-house-services='",jesi$c2_housing_emp_raw_count,
+               "' data-shelter-house-services='",jesi$housing_raw_count,
+               "' data-career-house-services='",jesi$employment_raw_count,
+               "' data-total-preven-services='",jesi$c3_preven_inter_raw_count,
+               "' data-reentry-preven-services='",jesi$prevention_raw_count,
+               "' data-youthdev-preven-services='",jesi$youth_dev_raw_count,
+               "' data-total-fam-services='",jesi$c4_fam_comm_raw_count,
+               "' data-human-fam-services='",jesi$human_srvs_raw_count,
+               "' data-advocacy-fam-services='",jesi$advocacy_raw_count,
+               "' data-zip-details='",jesi$zipcode,
+               "' data-health-category-details='",jesi$c1_health_well_category,
+               "' data-house-category-details='",jesi$c2_housing_emp_category,
+               "' data-preven-category-details='",jesi$c3_preven_inter_category,
+               "' data-fam-category-details='",jesi$c4_fam_comm_category,
+               "'></div></div>")
+
+# create custom legend labels
+labels <- c(
+"Lowest (0-19th Percentile)",
+"Low (20-39th Percentile)",
+"Moderate (40-59th Percentile)",
+"High (60-79th Percentile)",
+"Highest (80-100th Percentile)")
+
+# build map
+leaflet(jesi, width = "100%", height = "600px", options = leafletOptions(zoomControl = FALSE)) %>%
+
+# add base map
+# new code: add base map
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=", carto_key),
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    ) %>%
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png?key=", carto_key),
+      # attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      options = providerTileOptions(pane = "markerPane") # retain unique setting 
+    ) %>%
+# add map panes
+addMapPane("index_pane", zIndex = 400) %>%
+addMapPane("missing_pane", zIndex = 410) %>% 
+  addMapPane("jeni", zIndex = 415) %>%
+addMapPane("sds_pane", zIndex = 420) %>%
+addMapPane("spas_pane", zIndex = 420) %>%
+
+
+# set view and layer control
+  setView(-118.6368454, 34.2324274, zoom = 8.5) %>%
+addLayersControl(overlayGroups = c("Supervisorial Districts","Service Planning Areas", "JENI - High/Highest Need ZIP Codes"), options = layersControlOptions(collapsed = FALSE, autoZIndex = TRUE)) %>%
+
+  
+# create sidebar and add html for content
+addControl(html='<div class="leaflet-popup-scrolled" id="sidebar1"><div class="zipcode-header"   style="margin-bottom: 8px; margin-top: 8px;"><span class="square-icon"></span><span class="zip" style="font-size: 16px; font-weight: bold;"></span></div><span style="font-size: 12px; font-weight: bold; line-height: 1.5em;">Health & Wellness Percentile*:<span class="health-pctl" style="font-size: 12px; font-weight: bold;"></span> |
+<span class="health-category color-format-health" style="font-size: 12px; font-weight:bold;"></span><br/><div class="progress-bar"><div class="progress-health"></div></div><br/>JESI & Other Component Percentiles*</span><br/><span style="font-size: 12px; line-height: 1.5em;">JESI:<span class="jesi-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-jesi"></div></div><br/>Housing & Employment:<span class="house-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-house"></div></div><br/>Prevention & Intervention:<span class="preven-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-preven"></div></div><br/>Community Services & Advocacy:<span class="fam-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-fam"></div></div><br/><br/><span style="line-height: 1.5em; display: block; width: 95%;"><span class="zip-details" style="font-size: 12px; font-weight: bold;"></span> has a <span class="health-category-details color-format-health"></span> Health & Wellness service level. It also scores <span class="house-category color-format-house"></span> on Housing & Employment,
+<span class="preven-category color-format-preven"></span>
+on Prevention & Intervention, <span class="fam-category color-format-fam"></span> on Community Services & Advocacy, and  <span class="jesi-category color-format-jesi"></span> on JESI overall.<br/><br/>Neighborhood: <span class="neighborhood" style="font-size: 12px; font-weight: bold;"></span><br/>JESI Rank: <span class="jesi-rank" style="font-size: 12px; font-weight: bold;"></span> out of 277 ZIP Codes<br/>Population: <span class="population" style="font-size: 12px; font-weight: bold;"></span><br/>Supervisorial District: <span class="sd-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="sd-name" style="font-size: 12px; font-weight: bold;"></span><br/>Service Planning Area: <span class="spa-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="spa-name" style="font-size: 12px; font-weight: bold;"></span><br/><br/><span style="font-size: 12px; font-weight: bold;">Health & Wellness Organizations</span><br/>Total Health & Wellness Services: <span class="total-health-services" style="font-size: 12px; font-weight: bold;"></span><br/>Physical Health & Wellbeing Services: <span class="physical-health-services" style="font-size: 12px; font-weight: bold;"></span><br/>Behavioral Health Services: <span class="behavioral-health-services" style="font-size: 12px; font-weight: bold;"></span></span><br/><span style="font-size: 10px; font-style: italic;">*Percentiles range from 0-100. A higher percentile means a higher level of services in that area.</span></span></div>', position = "topleft") %>%
+    
+
+# add polygons for JESI ZIP Codes
+addPolygons(color = "black", weight = 1, smoothFactor = 0.5, 
+            opacity = 1.0,
+            fillOpacity = .8, fillColor = ~pal_impact(c1_health_well_pctl), highlight = highlightOptions(color = "white", weight = 5, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~popup,
+group = "JESI", options = pathOptions(pane = "index_pane")) %>%
+
+# add polygons for ZIP Codes wit no JESI
+  addPolygons(data=nojesi,color="#444444", weight = 1, smoothFactor = 0.5, fillOpacity = .8, fillColor ="#808080", highlight = highlightOptions(color = "#444444", weight = 3, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~paste0(
+"ZIP Code:<b> ", nojesi$zipcode, "</b></br>",
+"No JESI Available</br>Population:<b> ", nojesi$population_count, "</b></br>"),
+options = pathOptions(pane = "missing_pane"))%>%  
+  
+# add boundaries for SPAs and SDs
+addPolygons(data = sds, 
+            opacity = 1.0,
+            dashArray = "10 5",
+            fillOpacity=0, color = "black", weight = 2.5, label=~distname, group = "Supervisorial Districts", options = pathOptions(pane = "sds_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%
+  addPolygons(data = spas, 
+              opacity = 1.0,
+              dashArray = "5 5",
+              fillOpacity=0, color = "black", weight = 2.5, label=~spa_2012, group = "Service Planning Areas", options = pathOptions(pane = "spas_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%  
+
+# add boundaries for highest need JENI Zips
+addPolygons(data = jeni_highest, 
+            opacity = 1.0,
+            fillOpacity=0, color = "black", weight = 2.5, label=~zipcode, group = "JENI - High/Highest Need ZIP Codes", options = pathOptions(pane = "jeni", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>% 
+
+  #add combined legend  
+    addLegend(position = "bottomleft",
+            title="Health & Wellness Service Level",
+            labels = c("Lowest (0-19th Percentile)", "Low (20-39th Percentile)",
+                       "Moderate (40-59th Percentile)", "High (60-79th Percentile)","Highest (80-100th Percentile)", "JESI Not Available"),
+            colors= c("#edf8e9", "#bae4b3", "#66AB5D", "#168219", "#006416", "#808080"), opacity=.9)%>%
+
+
+  # layers control
+  addLayersControl(
+    overlayGroups =  c("JENI - High/Highest Need ZIP Codes",
+      "Supervisorial Districts",
+      "Service Planning Areas"),
+    options = layersControlOptions(collapsed = TRUE),position = "topright")  %>%
+ hideGroup("Supervisorial Districts") %>%
+  hideGroup("Service Planning Areas")%>%
+  hideGroup("JENI - High/Highest Need ZIP Codes") %>%
+ htmlwidgets::onRender("
+        function() {
+            $('.leaflet-control-layers-overlays').prepend('<label style=\"text-align:left\">Click to view</label>');
+            L.control.zoom({ position: 'topright' }).addTo(this);
+        }
+    ")
+```
+<span style='float: right; font-size: 12px;'>Catalyst California (formerly Advancement Project California); Justice Equity Services Index; <u>[catalystcalifornia.org](https://www.catalystcalifornia.org/campaign-tools/maps-and-data/justice-equity-services-index)</u>, 2021.</span style>
+
+## Housing & Employment
+```{r}
+#blue
+pal_impact <- colorBin(palette = c("#015693","#2182A9", "#5BA7C5", "#bdd7e7","#eff3ff" ), domain = jesi$c2_housing_emp_pctl, bins = 5, reverse = TRUE, pretty = FALSE)
+
+# severity: [ "rgb(239,243,255)", "rgb(189,215,231)", "rgb(107,174,214)", "rgb(49,130,189)", "rgb(8,81,156)" ],
+
+# #create popup
+popup <- paste("<div class='hasjesi'><div class='house-leaflet-data' data-zip='", jesi$zipcode,
+               "' data-neighborhood='",jesi$lat_neighborhood,
+               "' data-jesi-pctl='",jesi$jesi_pctl,
+               "' data-jesi-category='",jesi$jesi_category,
+               "' data-jesi-rank='",jesi$jesi_rank,
+               "' data-population='",prettyNum(jesi$population_count, big.mark = ",", preserve.width = "none"),
+               "' data-sd-number='",jesi$sd_number,
+               "' data-sd-name='",jesi$sd_name,
+               "' data-spa-number='",jesi$spa_number,
+               "' data-spa-name='",jesi$spa_name,
+               "' data-health-category='",jesi$c1_health_well_category,
+               "' data-house-category='",jesi$c2_housing_emp_category,
+               "' data-preven-category='",jesi$c3_preven_inter_category,
+               "' data-fam-category='",jesi$c4_fam_comm_category,
+               "' data-health-pctl='",jesi$c1_health_well_pctl,
+               "' data-house-pctl='",jesi$c2_housing_emp_pctl,
+               "' data-preven-pctl='",jesi$c3_preven_inter_pctl,
+               "' data-fam-pctl='",jesi$c4_fam_comm_pctl,
+               "' data-total-health-services='",jesi$c1_health_well_raw_count,
+               "' data-physical-health-services='",jesi$phys_health_raw_count,
+               "' data-behavioral-health-services='",jesi$behav_health_raw_count,
+               "' data-total-house-services='",jesi$c2_housing_emp_raw_count,
+               "' data-shelter-house-services='",jesi$housing_raw_count,
+               "' data-career-house-services='",jesi$employment_raw_count,
+               "' data-total-preven-services='",jesi$c3_preven_inter_raw_count,
+               "' data-reentry-preven-services='",jesi$prevention_raw_count,
+               "' data-youthdev-preven-services='",jesi$youth_dev_raw_count,
+               "' data-total-fam-services='",jesi$c4_fam_comm_raw_count,
+               "' data-human-fam-services='",jesi$human_srvs_raw_count,
+               "' data-advocacy-fam-services='",jesi$advocacy_raw_count,
+               "' data-zip-details='",jesi$zipcode,
+               "' data-health-category-details='",jesi$c1_health_well_category,
+               "' data-house-category-details='",jesi$c2_housing_emp_category,
+               "' data-preven-category-details='",jesi$c3_preven_inter_category,
+               "' data-fam-category-details='",jesi$c4_fam_comm_category,
+               "'></div></div>")
+
+# create custom legend labels
+labels <- c(
+"Lowest (0-19th Percentile)",
+"Low (20-39th Percentile)",
+"Moderate (40-59th Percentile)",
+"High (60-79th Percentile)",
+"Highest (80-100th Percentile)")
+
+# build map
+leaflet(jesi, width = "100%", height = "600px", options = leafletOptions(zoomControl = FALSE)) %>%
+
+# add base map
+# new code: add base map
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=", carto_key),
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    ) %>%
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png?key=", carto_key),
+      # attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      options = providerTileOptions(pane = "markerPane") # retain unique setting 
+    ) %>%
+# add map panes
+addMapPane("index_pane", zIndex = 400) %>%
+addMapPane("missing_pane", zIndex = 410) %>% 
+  addMapPane("jeni", zIndex = 415) %>%
+addMapPane("sds_pane", zIndex = 420) %>%
+addMapPane("spas_pane", zIndex = 420) %>%
+
+
+# set view and layer control
+# setView(-118.281301, 33.921077, zoom = 8.25) %>%
+  setView(-118.6368454, 34.2324274, zoom = 8.5) %>%
+addLayersControl(overlayGroups = c("Supervisorial Districts","Service Planning Areas", "JENI - High/Highest Need ZIP Codes"), options = layersControlOptions(collapsed = FALSE, autoZIndex = TRUE)) %>%
+
+# create sidebar and add html for content
+addControl(html='<div class="leaflet-popup-scrolled" id="sidebar2"><div class="zipcode-header" style="margin-bottom: 8px; margin-top: 8px;"><span class="square-icon"></span><span class="zip" style="font-size: 16px; font-weight: bold;"></span></div><span style="font-size: 12px; font-weight: bold; line-height: 1.5em;">Housing & Employment Percentile*:<span class="house-pctl" style="font-size: 12px; font-weight: bold;"></span> |
+<span class="house-category color-format-house" style="font-size: 12px; font-weight:bold;"></span><br/><div class="progress-bar"><div class="progress-house"></div></div><br/>JESI & Other Component Percentiles*</span><br/><span style="font-size: 12px; line-height: 1.5em;">JESI:<span class="jesi-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-jesi"></div></div><br/>Health & Wellness:<span class="health-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-health"></div></div><br/>Prevention & Intervention:<span class="preven-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-preven"></div></div><br/>Community Services & Advocacy:<span class="fam-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-fam"></div></div><br/><br/><span style="line-height: 1.5em; display: block; width: 95%;"><span class="zip-details" style="font-size: 12px; font-weight: bold;"></span> has a <span class="house-category-details color-format-house"></span> Housing & Employment service level. It also scores <span class="health-category color-format-health"></span> on Health & Wellness,
+<span class="preven-category color-format-preven"></span>
+on Prevention & Intervention, <span class="fam-category color-format-fam"></span> on Community Services & Advocacy, and  <span class="jesi-category color-format-house"></span> on JESI overall.<br/><br/>Neighborhood: <span class="neighborhood" style="font-size: 12px; font-weight: bold;"></span><br/>JESI Rank: <span class="jesi-rank" style="font-size: 12px; font-weight: bold;"></span> out of 277 ZIP Codes<br/>Population: <span class="population" style="font-size: 12px; font-weight: bold;"></span><br/>Supervisorial District: <span class="sd-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="sd-name" style="font-size: 12px; font-weight: bold;"></span><br/>Service Planning Area: <span class="spa-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="spa-name" style="font-size: 12px; font-weight: bold;"></span><br/><br/><span style="font-size: 12px; font-weight: bold;">Housing & Employment Organizations</span><br/>Total Housing & Employment Services: <span class="total-house-services" style="font-size: 12px; font-weight: bold;"></span><br/>Housing & Shelter Services: <span class="shelter-house-services" style="font-size: 12px; font-weight: bold;"></span><br/>Employment & Career Training Services: <span class="career-house-services" style="font-size: 12px; font-weight: bold;"></span></span><br/><span style="font-size: 10px; font-style: italic;">*Percentiles range from 0-100. A higher percentile means a higher level of services in that area.</span></span></div>', position = "topleft") %>%
+     
+  
+# add polygons for JESI ZIP Codes
+addPolygons(color = "black", weight = 1, smoothFactor = 0.5,
+            opacity = 1.0,
+            fillOpacity = .8, fillColor = ~pal_impact(c2_housing_emp_pctl), highlight = highlightOptions(color = "white", weight = 5, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~popup,
+group = "JESI", options = pathOptions(pane = "index_pane")) %>%
+
+# add polygons for ZIP Codes wit no JESI
+  addPolygons(data=nojesi,color="#444444", weight = 1, smoothFactor = 0.5, fillOpacity = .8, fillColor ="#808080", highlight = highlightOptions(color = "#444444", weight = 3, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~paste0(
+"ZIP Code:<b> ", nojesi$zipcode, "</b></br>",
+"No JESI Available</br>Population:<b> ", nojesi$population_count, "</b></br>"),
+options = pathOptions(pane = "missing_pane"))%>%  
+  
+# add boundaries for SPAs and SDs
+addPolygons(data = sds, 
+            opacity = 1.0,
+            dashArray = "10 5",
+            fillOpacity=0, color = "black", weight = 2.5, label=~distname, group = "Supervisorial Districts", options = pathOptions(pane = "sds_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%
+  addPolygons(data = spas, 
+              opacity = 1.0,
+              dashArray = "5 5",
+              fillOpacity=0, color = "black", weight = 2.5, label=~spa_2012, group = "Service Planning Areas", options = pathOptions(pane = "spas_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%  
+
+# add boundaries for highest need JENI Zips
+addPolygons(data = jeni_highest, fillOpacity=0, color = "black", weight = 2.5, label=~zipcode, group = "JENI - High/Highest Need ZIP Codes", options = pathOptions(pane = "jeni", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>% 
+
+#add combined legend  
+   addLegend(position = "bottomleft",
+            title="Housing & Employment Service Level",
+            labels = c("Lowest (0-19th Percentile)", "Low (20-39th Percentile)",
+                       "Moderate (40-59th Percentile)", "High (60-79th Percentile)","Highest (80-100th Percentile)", "JESI Not Available"),
+            colors= c("#eff3ff","#bdd7e7","#5BA7C5","#2182A9","#015693","#808080"), opacity=.9)%>%
+
+  # layers control
+  addLayersControl(
+    overlayGroups =  c("JENI - High/Highest Need ZIP Codes",
+      "Supervisorial Districts",
+      "Service Planning Areas"),
+    options = layersControlOptions(collapsed = TRUE),position = "topright")  %>%
+ hideGroup("Supervisorial Districts") %>%
+  hideGroup("Service Planning Areas") %>%
+  hideGroup("JENI - High/Highest Need ZIP Codes") %>%
+  htmlwidgets::onRender("
+        function() {
+            L.control.zoom({ position: 'topright' }).addTo(this);
+        }
+    ")
+
+```
+<span style='float: right; font-size: 12px;'>Catalyst California (formerly Advancement Project California); Justice Equity Services Index; <u>[catalystcalifornia.org](https://www.catalystcalifornia.org/campaign-tools/maps-and-data/justice-equity-services-index)</u>, 2021.</span style>
+
+## Prevention & Intervention
+```{r}
+# yellows
+pal_impact <- colorBin(palette = c("#A6A600","#D2D200", "#FFFF00", "#EEEE88", "#F1F1C2" ), domain = jesi$c3_preven_inter_pctl, bins = 5, reverse = TRUE, pretty = FALSE)
+
+# create popup
+popup <- paste("<div class='hasjesi'><div class='preven-leaflet-data' data-zip='", jesi$zipcode,
+               "' data-neighborhood='",jesi$lat_neighborhood,
+               "' data-jesi-pctl='",jesi$jesi_pctl,
+               "' data-jesi-category='",jesi$jesi_category,
+               "' data-jesi-rank='",jesi$jesi_rank,
+               "' data-population='",prettyNum(jesi$population_count, big.mark = ",", preserve.width = "none"),
+               "' data-sd-number='",jesi$sd_number,
+               "' data-sd-name='",jesi$sd_name,
+               "' data-spa-number='",jesi$spa_number,
+               "' data-spa-name='",jesi$spa_name,
+               "' data-health-category='",jesi$c1_health_well_category,
+               "' data-house-category='",jesi$c2_housing_emp_category,
+               "' data-preven-category='",jesi$c3_preven_inter_category,
+               "' data-fam-category='",jesi$c4_fam_comm_category,
+               "' data-health-pctl='",jesi$c1_health_well_pctl,
+               "' data-house-pctl='",jesi$c2_housing_emp_pctl,
+               "' data-preven-pctl='",jesi$c3_preven_inter_pctl,
+               "' data-fam-pctl='",jesi$c4_fam_comm_pctl,
+               "' data-total-health-services='",jesi$c1_health_well_raw_count,
+               "' data-physical-health-services='",jesi$phys_health_raw_count,
+               "' data-behavioral-health-services='",jesi$behav_health_raw_count,
+               "' data-total-house-services='",jesi$c2_housing_emp_raw_count,
+               "' data-shelter-house-services='",jesi$housing_raw_count,
+               "' data-career-house-services='",jesi$employment_raw_count,
+               "' data-total-preven-services='",jesi$c3_preven_inter_raw_count,
+               "' data-reentry-preven-services='",jesi$prevention_raw_count,
+               "' data-youthdev-preven-services='",jesi$youth_dev_raw_count,
+               "' data-total-fam-services='",jesi$c4_fam_comm_raw_count,
+               "' data-human-fam-services='",jesi$human_srvs_raw_count,
+               "' data-advocacy-fam-services='",jesi$advocacy_raw_count,
+               "' data-zip-details='",jesi$zipcode,
+               "' data-health-category-details='",jesi$c1_health_well_category,
+               "' data-house-category-details='",jesi$c2_housing_emp_category,
+               "' data-preven-category-details='",jesi$c3_preven_inter_category,
+               "' data-fam-category-details='",jesi$c4_fam_comm_category,
+               "'></div></div>")
+
+# create custom legend labels
+labels <- c(
+"Lowest (0-19th Percentile)",
+"Low (20-39th Percentile)",
+"Moderate (40-59th Percentile)",
+"High (60-79th Percentile)",
+"Highest (80-100th Percentile)")
+
+# build map
+leaflet(jesi, width = "100%", height = "600px", options = leafletOptions(zoomControl = FALSE)) %>%
+
+# add base map
+# new code: add base map
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=", carto_key),
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    ) %>%
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png?key=", carto_key),
+      # attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      options = providerTileOptions(pane = "markerPane") # retain unique setting 
+    ) %>%
+# add map panes
+addMapPane("index_pane", zIndex = 400) %>%
+addMapPane("missing_pane", zIndex = 410) %>% 
+  addMapPane("jeni", zIndex = 415) %>%
+addMapPane("sds_pane", zIndex = 420) %>%
+addMapPane("spas_pane", zIndex = 420) %>%
+
+
+# set view and layer control
+# setView(-118.281301, 33.921077, zoom = 8.25) %>%
+  setView(-118.6368454, 34.2324274, zoom = 8.5) %>%
+addLayersControl(overlayGroups = c("Supervisorial Districts","Service Planning Areas", "JENI - High/Highest Need ZIP Codes"), options = layersControlOptions(collapsed = FALSE, autoZIndex = TRUE)) %>%
+
+# create sidebar and add html for content
+addControl(html='<div class="leaflet-popup-scrolled" id="sidebar3"><div class="zipcode-header"  style="margin-bottom: 8px; margin-top: 8px;"><span class="square-icon"></span><span class="zip" style="font-size: 16px; font-weight: bold;"></span> </div><span style="font-size: 12px; font-weight: bold; line-height: 1.5em;">Prevention & Intervention Percentile*:<span class="preven-pctl" style="font-size: 12px; font-weight: bold;"></span> |
+<span class="preven-category color-format-preven" style="font-size: 12px; font-weight:bold;"></span><br/><div class="progress-bar"><div class="progress-preven"></div></div><br/>JESI & Other Component Percentiles*</span><br/><span style="font-size: 12px; line-height: 1.5em;">JESI:<span class="jesi-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-jesi"></div></div><br/>Health & Wellness:<span class="health-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-health"></div></div><br/>Housing & Employment:<span class="house-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-house"></div></div><br/>Community Services & Advocacy:<span class="fam-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-fam"></div></div><br/><br/><span style="line-height: 1.5em; display: block; width: 95%;"><span class="zip-details" style="font-size: 12px; font-weight: bold;"></span> has a <span class="preven-category-details color-format-preven"></span> Prevention & Intervention service level. It also scores <span class="health-category color-format-health"></span> on Health & Wellness,
+<span class="house-category color-format-house"></span>
+on Housing & Employment, <span class="fam-category color-format-fam"></span> on Community Services & Advocacy, and  <span class="jesi-category color-format-jesi"></span> on JESI overall.<br/><br/>Neighborhood: <span class="neighborhood" style="font-size: 12px; font-weight: bold;"></span><br/>JESI Rank: <span class="jesi-rank" style="font-size: 12px; font-weight: bold;"></span> out of 277 ZIP Codes<br/>Population: <span class="population" style="font-size: 12px; font-weight: bold;"></span><br/>Supervisorial District: <span class="sd-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="sd-name" style="font-size: 12px; font-weight: bold;"></span><br/>Service Planning Area: <span class="spa-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="spa-name" style="font-size: 12px; font-weight: bold;"></span><br/><br/><span style="font-size: 12px; font-weight: bold;">Prevention & Intervention Organizations</span><br/>Total Prevention & Intervention Services: <span class="total-preven-services" style="font-size: 12px; font-weight: bold;"></span><br/>Prevention & Reentry Services: <span class="reentry-preven-services" style="font-size: 12px; font-weight: bold;"></span><br/>Youth Development Services: <span class="youthdev-preven-services" style="font-size: 12px; font-weight: bold;"></span></span><br/><span style="font-size: 10px; font-style: italic;">*Percentiles range from 0-100. A higher percentile means a higher level of services in that area.</span></span></div>', position = "topleft") %>%
+     
+  
+  
+# add polygons for JESI ZIP Codes
+addPolygons(color = "black", weight = 1, smoothFactor = 0.5, 
+            opacity = 1.0,
+            fillOpacity = .8, fillColor = ~pal_impact(c3_preven_inter_pctl), highlight = highlightOptions(color = "white", weight = 5, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~popup,
+group = "JESI", options = pathOptions(pane = "index_pane")) %>%
+
+# add polygons for ZIP Codes wit no JESI
+  addPolygons(data=nojesi,color="#444444", weight = 1, smoothFactor = 0.5, fillOpacity = .8, fillColor ="#808080", highlight = highlightOptions(color = "#444444", weight = 3, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~paste0(
+"ZIP Code:<b> ", nojesi$zipcode, "</b></br>",
+"No JESI Available</br>Population:<b> ", nojesi$population_count, "</b></br>"),
+options = pathOptions(pane = "missing_pane"))%>%  
+  
+# add boundaries for SPAs and SDs
+addPolygons(data = sds, 
+            opacity = 1.0,
+            dashArray = "10 5",
+            fillOpacity=0, color = "black", weight = 2.5, label=~distname, group = "Supervisorial Districts", options = pathOptions(pane = "sds_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%
+  addPolygons(data = spas, 
+              opacity = 1.0,
+              dashArray = "5 5",
+              fillOpacity=0, color = "black", weight = 2.5, label=~spa_2012, group = "Service Planning Areas", options = pathOptions(pane = "spas_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%  
+
+# add boundaries for highest need JENI Zips
+addPolygons(data = jeni_highest, fillOpacity=0, color = "black", weight = 2.5, label=~zipcode, group = "JENI - High/Highest Need ZIP Codes", options = pathOptions(pane = "jeni", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>% 
+
+
+  #add combined legend  
+   addLegend(position = "bottomleft",
+            title="Prevention & Intervention Service Level",
+            labels = c("Lowest (0-19th Percentile)", "Low (20-39th Percentile)",
+                       "Moderate (40-59th Percentile)", "High (60-79th Percentile)","Highest (80-100th Percentile)", "JESI Not Available"),
+            colors= c("#F1F1C2","#EEEE88","#FFFF00","#D2D200","#A6A600","#808080"), opacity=.9)%>%
+
+
+  # layers control
+  addLayersControl(
+    overlayGroups =  c("JENI - High/Highest Need ZIP Codes",
+      "Supervisorial Districts",
+      "Service Planning Areas"),
+    options = layersControlOptions(collapsed = TRUE), position = "topright")  %>%
+ hideGroup("Supervisorial Districts") %>%
+  hideGroup("Service Planning Areas") %>%
+  hideGroup("JENI - High/Highest Need ZIP Codes") %>%
+  htmlwidgets::onRender("
+        function() {
+            L.control.zoom({ position: 'topright' }).addTo(this);
+        }
+    ")
+```
+<span style='float: right; font-size: 12px;'>Catalyst California (formerly Advancement Project California); Justice Equity Services Index; <u>[catalystcalifornia.org](https://www.catalystcalifornia.org/campaign-tools/maps-and-data/justice-equity-services-index)</u>, 2021.</span style>
+
+## Community Services & Advocacy
+```{r}
+# turquoise
+pal_impact <- colorBin(palette = c("#005254","#018F88", "#22B5A4", "#9ED1CB","#BDDCD8" ), domain = jesi$c4_fam_comm_pctl, bins = 5, reverse = TRUE, pretty = FALSE)
+
+# create popup
+popup <- paste("<div class='hasjesi'><div class='fam-leaflet-data' data-zip='", jesi$zipcode,
+               "' data-neighborhood='",jesi$lat_neighborhood,
+               "' data-jesi-pctl='",jesi$jesi_pctl,
+               "' data-jesi-category='",jesi$jesi_category,
+               "' data-jesi-rank='",jesi$jesi_rank,
+               "' data-population='",prettyNum(jesi$population_count, big.mark = ",", preserve.width = "none"),
+               "' data-sd-number='",jesi$sd_number,
+               "' data-sd-name='",jesi$sd_name,
+               "' data-spa-number='",jesi$spa_number,
+               "' data-spa-name='",jesi$spa_name,
+               "' data-health-category='",jesi$c1_health_well_category,
+               "' data-house-category='",jesi$c2_housing_emp_category,
+               "' data-preven-category='",jesi$c3_preven_inter_category,
+               "' data-fam-category='",jesi$c4_fam_comm_category,
+               "' data-health-pctl='",jesi$c1_health_well_pctl,
+               "' data-house-pctl='",jesi$c2_housing_emp_pctl,
+               "' data-preven-pctl='",jesi$c3_preven_inter_pctl,
+               "' data-fam-pctl='",jesi$c4_fam_comm_pctl,
+               "' data-total-health-services='",jesi$c1_health_well_raw_count,
+               "' data-physical-health-services='",jesi$phys_health_raw_count,
+               "' data-behavioral-health-services='",jesi$behav_health_raw_count,
+               "' data-total-house-services='",jesi$c2_housing_emp_raw_count,
+               "' data-shelter-house-services='",jesi$housing_raw_count,
+               "' data-career-house-services='",jesi$employment_raw_count,
+               "' data-total-preven-services='",jesi$c3_preven_inter_raw_count,
+               "' data-reentry-preven-services='",jesi$prevention_raw_count,
+               "' data-youthdev-preven-services='",jesi$youth_dev_raw_count,
+               "' data-total-fam-services='",jesi$c4_fam_comm_raw_count,
+               "' data-human-fam-services='",jesi$human_srvs_raw_count,
+               "' data-advocacy-fam-services='",jesi$advocacy_raw_count,
+               "' data-zip-details='",jesi$zipcode,
+               "' data-health-category-details='",jesi$c1_health_well_category,
+               "' data-house-category-details='",jesi$c2_housing_emp_category,
+               "' data-preven-category-details='",jesi$c3_preven_inter_category,
+               "' data-fam-category-details='",jesi$c4_fam_comm_category,
+               "'></div></div>")
+
+# create custom legend labels
+labels <- c(
+"Lowest (0-19th Percentile)",
+"Low (20-39th Percentile)",
+"Moderate (40-59th Percentile)",
+"High (60-79th Percentile)",
+"Highest (80-100th Percentile)")
+
+# build map
+leaflet(jesi, width = "100%", height = "600px", options = leafletOptions(zoomControl = FALSE)) %>%
+
+# add base map
+# new code: add base map
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png?key=", carto_key),
+      attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    ) %>%
+    addTiles(
+      urlTemplate = paste0("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}.png?key=", carto_key),
+      # attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      options = providerTileOptions(pane = "markerPane") # retain unique setting 
+    ) %>%
+# add map panes
+addMapPane("index_pane", zIndex = 400) %>%
+addMapPane("missing_pane", zIndex = 410) %>% 
+  addMapPane("jeni", zIndex = 415) %>%
+addMapPane("sds_pane", zIndex = 420) %>%
+addMapPane("spas_pane", zIndex = 420) %>%
+
+
+# set view and layer control
+# setView(-118.281301, 33.921077, zoom = 8.25) %>%
+  setView(-118.6368454, 34.2324274, zoom = 8.5) %>%
+addLayersControl(overlayGroups = c("Supervisorial Districts","Service Planning Areas", "JENI - High/Highest Need ZIP Codes"), options = layersControlOptions(collapsed = FALSE, autoZIndex = TRUE)) %>%
+
+# create sidebar and add html for content
+addControl(html='<div class="leaflet-popup-scrolled" id="sidebar4"><div class="zipcode-header"   style="margin-bottom: 8px; margin-top: 8px;"><span class="square-icon"></span><span class="zip" style="font-size: 16px; font-weight: bold;"></span></div><span style="font-size: 12px; font-weight: bold; line-height: 1.5em;">Community Services & Advocacy Percentile*:<span class="fam-pctl" style="font-size: 12px; font-weight: bold;"></span> |
+<span class="fam-category color-format-fam" style="font-size: 12px; font-weight:bold;"></span><br/><div class="progress-bar"><div class="progress-fam"></div></div><br/>JESI & Other Component Percentiles*</span><br/><span style="font-size: 12px; line-height: 1.5em;">JESI:<span class="jesi-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-jesi"></div></div><br/>Health & Wellness:<span class="health-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-health"></div></div><br/>Housing & Employment:<span class="house-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-house"></div></div><br/>Prevention & Intervention:<span class="preven-pctl" style="font-size: 12px; font-weight: bold;"></span><br/><div class="progress-bar"><div class="progress-preven"></div></div><br/><br/><span style="line-height: 1.5em; display: block; width: 95%;"><span class="zip-details" style="font-size: 12px; font-weight: bold;"></span> has a <span class="fam-category-details color-format-fam"></span> Community Services & Advocacy service level. It also scores <span class="health-category color-format-health"></span> on Health & Wellness,
+<span class="house-category color-format-house"></span>
+on Housing & Employment, <span class="preven-category color-format-preven"></span> on Prevention & Intervention, and  <span class="jesi-category color-format-jesi"></span> on JESI overall.<br/><br/>Neighborhood: <span class="neighborhood" style="font-size: 12px; font-weight: bold;"></span><br/>JESI Rank: <span class="jesi-rank" style="font-size: 12px; font-weight: bold;"></span> out of 277 ZIP Codes<br/>Population: <span class="population" style="font-size: 12px; font-weight: bold;"></span><br/>Supervisorial District: <span class="sd-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="sd-name" style="font-size: 12px; font-weight: bold;"></span><br/>Service Planning Area: <span class="spa-number" style="font-size: 12px; font-weight: bold;"></span> | <span class="spa-name" style="font-size: 12px; font-weight: bold;"></span><br/><br/><span style="font-size: 12px; font-weight: bold;">Community Services & Advocacy Organizations</span><br/>Total Community Services & Advocacy Services: <span class="total-fam-services" style="font-size: 12px; font-weight: bold;"></span><br/>Human Services: <span class="human-fam-services" style="font-size: 12px; font-weight: bold;"></span><br/>Advocacy & Community Action Services: <span class="advocacy-fam-services" style="font-size: 12px; font-weight: bold;"></span></span><br/><span style="font-size: 10px; font-style: italic;">*Percentiles range from 0-100. A higher percentile means a higher level of services in that area.</span></span></div>', position = "topleft") %>%
+       
+  
+  
+# add polygons for JESI ZIP Codes
+addPolygons(color = "black", weight = 1, smoothFactor = 0.5, 
+            opacity = 1.0,
+            fillOpacity = .8, fillColor = ~pal_impact(c4_fam_comm_pctl), highlight = highlightOptions(color = "white", weight = 5, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~popup,
+group = "JESI", options = pathOptions(pane = "index_pane")) %>%
+
+# add polygons for ZIP Codes wit no JESI
+  addPolygons(data=nojesi,color="#444444", weight = 1, smoothFactor = 0.5, fillOpacity = .8, fillColor ="#808080", highlight = highlightOptions(color = "#444444", weight = 3, bringToFront = TRUE, sendToBack = TRUE), 
+popup = ~paste0(
+"ZIP Code:<b> ", nojesi$zipcode, "</b></br>",
+"No JESI Available</br>Population:<b> ", nojesi$population_count, "</b></br>"),
+options = pathOptions(pane = "missing_pane"))%>%  
+  
+# add boundaries for SPAs and SDs
+addPolygons(data = sds, 
+            opacity = 1.0,
+            dashArray = "10 5",
+            fillOpacity=0, color = "black", weight = 2.5, label=~distname, group = "Supervisorial Districts", options = pathOptions(pane = "sds_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%
+  addPolygons(data = spas, 
+              opacity = 1.0,
+              dashArray = "5 5",
+              fillOpacity=0, color = "black", weight = 2.5, label=~spa_2012, group = "Service Planning Areas", options = pathOptions(pane = "spas_pane", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>%  
+
+# add boundaries for highest need JENI Zips
+addPolygons(data = jeni_highest, fillOpacity=0, color = "black", weight = 2.5, label=~zipcode, group = "JENI - High/Highest Need ZIP Codes", options = pathOptions(pane = "jeni", interactive = FALSE), highlight = highlightOptions(color = "white", weight = 3, bringToFront = TRUE)) %>% 
+
+   #add combined legend  
+   addLegend(position = "bottomleft",
+            title="Community Services & Advocacy Service Level",
+            labels = c("Lowest (0-19th Percentile)", "Low (20-39th Percentile)",
+                       "Moderate (40-59th Percentile)", "High (60-79th Percentile)","Highest (80-100th Percentile)", "JESI Not Available"),
+            colors= c("#BDDCD8","#9ED1CB","#22B5A4","#018F88","#005254","#808080"), opacity=.9)%>%
+
+  # layers control
+  addLayersControl(
+    overlayGroups =  c("JENI - High/Highest Need ZIP Codes",
+      "Supervisorial Districts",
+      "Service Planning Areas"),
+    options = layersControlOptions(collapsed = TRUE),position = "topright")  %>%
+ hideGroup("Supervisorial Districts") %>%
+  hideGroup("Service Planning Areas") %>%
+    hideGroup("JENI - High/Highest Need ZIP Codes") %>%
+  htmlwidgets::onRender("
+        function() {
+            L.control.zoom({ position: 'topright' }).addTo(this);
+        }
+    ")
+
+```
+
+```{js}
+<!-- This function is used to color code degrees of JENI index ratings in "popup"/sidepanel feature -->
+<!-- Elements include: square icon, main index progress bar, and "lowest" to "highest" keywords -->
+
+<!-- Captures  -->
+var mapsPlaceholder = [];
+L.Map.addInitHook(function () {
+  mapsPlaceholder.push(this);
+  
+  mapsPlaceholder.forEach(map => {
+    
+    
+    map.on('popupopen', (e) => {
+    console.log('popupopen');
+
+    let sidebarId;
+    // If this then modify sidebar on first map
+    console.log(map == mapsPlaceholder[0]);
+    if (map == mapsPlaceholder[0]) {
+    sidebarId = "sidebar1";
+    prefix = "health"}
+    
+    // If this then modify sidebar on second map
+    console.log(mapsPlaceholder.length > 1 && map == mapsPlaceholder[1]);
+    
+    if (mapsPlaceholder.length > 1 && map == mapsPlaceholder[1]){
+    sidebarId = "sidebar2";
+    prefix = "house"}
+    
+    // If this then modify sidebar on third map
+    console.log(mapsPlaceholder.length > 2 && map == mapsPlaceholder[2]);
+    
+    if (mapsPlaceholder.length > 2 && map == mapsPlaceholder[2]){
+    sidebarId = "sidebar3";
+    prefix = "preven"}
+    
+    // If this then modify sidebar on fourth map
+    console.log(mapsPlaceholder.length > 3 && map == mapsPlaceholder[3]);
+    
+    if (mapsPlaceholder.length > 3 && map == mapsPlaceholder[3]){
+    sidebarId = "sidebar4";
+    prefix = "fam"}
+    
+    // Use prefixes so you dont have to copy paste all the code below
+    let popups = document.querySelectorAll('.'+ prefix + '-leaflet-data');
+    console.log(popups);
+    
+document.querySelectorAll('.hasjesi').forEach(hasjesi => {
+hasjesi.parentElement.parentElement.parentElement.classList.add('hidden')
+})  
+
+popups.forEach((popup) => {
+console.log(popup)
+console.log('event');
+console.log(e);
+
+let sidebar = document.querySelector("#"+sidebarId)
+console.log(sidebarId)
+
+
+sidebar.querySelector('.zip').innerHTML = popup.getAttribute('data-zip')
+sidebar.querySelector('.neighborhood').innerHTML = popup.getAttribute('data-neighborhood')
+sidebar.querySelector('.jesi-pctl').innerHTML = popup.getAttribute('data-jesi-pctl')
+sidebar.querySelector('.jesi-category').innerHTML = popup.getAttribute('data-jesi-category')
+sidebar.querySelector('.jesi-rank').innerHTML = popup.getAttribute('data-jesi-rank')
+sidebar.querySelector('.population').innerHTML = popup.getAttribute('data-population')
+sidebar.querySelector('.sd-number').innerHTML = popup.getAttribute('data-sd-number')
+sidebar.querySelector('.sd-name').innerHTML = popup.getAttribute('data-sd-name')
+sidebar.querySelector('.spa-number').innerHTML = popup.getAttribute('data-spa-number')
+sidebar.querySelector('.spa-name').innerHTML = popup.getAttribute('data-spa-name')
+sidebar.querySelector('.zip-details').innerHTML = popup.getAttribute('data-zip')
+if (sidebarId == "sidebar1"){
+sidebar.querySelector('.health-category-details').innerHTML = popup.getAttribute('data-health-category')
+sidebar.querySelector('.total-health-services').innerHTML = popup.getAttribute('data-total-health-services')
+sidebar.querySelector('.physical-health-services').innerHTML = popup.getAttribute('data-physical-health-services')
+sidebar.querySelector('.behavioral-health-services').innerHTML = popup.getAttribute('data-behavioral-health-services')
+}
+if (sidebarId == "sidebar2"){
+sidebar.querySelector('.house-category-details').innerHTML = popup.getAttribute('data-house-category')
+sidebar.querySelector('.total-house-services').innerHTML = popup.getAttribute('data-total-house-services')
+sidebar.querySelector('.shelter-house-services').innerHTML = popup.getAttribute('data-shelter-house-services')
+sidebar.querySelector('.career-house-services').innerHTML = popup.getAttribute('data-career-house-services')
+}
+if (sidebarId == "sidebar3"){
+sidebar.querySelector('.preven-category-details').innerHTML = popup.getAttribute('data-preven-category')
+sidebar.querySelector('.total-preven-services').innerHTML = popup.getAttribute('data-total-preven-services')
+sidebar.querySelector('.reentry-preven-services').innerHTML = popup.getAttribute('data-reentry-preven-services')
+sidebar.querySelector('.youthdev-preven-services').innerHTML = popup.getAttribute('data-youthdev-preven-services')
+}
+if (sidebarId == "sidebar4"){
+sidebar.querySelector('.fam-category-details').innerHTML = popup.getAttribute('data-fam-category')
+sidebar.querySelector('.total-fam-services').innerHTML = popup.getAttribute('data-total-fam-services')
+sidebar.querySelector('.human-fam-services').innerHTML = popup.getAttribute('data-human-fam-services')
+sidebar.querySelector('.advocacy-fam-services').innerHTML = popup.getAttribute('data-advocacy-fam-services')
+}
+sidebar.querySelector('.health-category').innerHTML = popup.getAttribute('data-health-category')
+sidebar.querySelector('.house-category').innerHTML = popup.getAttribute('data-house-category')
+sidebar.querySelector('.preven-category').innerHTML = popup.getAttribute('data-preven-category')
+sidebar.querySelector('.fam-category').innerHTML = popup.getAttribute('data-fam-category')
+sidebar.querySelector('.health-pctl').innerHTML = popup.getAttribute('data-health-pctl')
+sidebar.querySelector('.house-pctl').innerHTML = popup.getAttribute('data-house-pctl')
+sidebar.querySelector('.preven-pctl').innerHTML = popup.getAttribute('data-preven-pctl')
+sidebar.querySelector('.fam-pctl').innerHTML = popup.getAttribute('data-fam-pctl')
+
+let components = ["jesi", "health", "house", "preven", "fam"]
+components.forEach(component => {
+let nodes = sidebar.querySelectorAll('.color-format-' + component);
+    nodes.forEach(el => {
+let classes = [component + "-lowest", component + "-low", component + "-moderate", component + "-high", component + "-highest"]
+    classes.forEach(class_ => {
+    el.classList.remove(class_)
+    })
+    console.log(el.innerHTML.trim())
+if (el.innerHTML.trim() == "Lowest") {
+el.classList.add(component + '-lowest');
+} else if (el.innerHTML.trim() == "Low") {
+el.classList.add(component + '-low');
+} else if (el.innerHTML.trim() == "Moderate") {
+el.classList.add(component + '-moderate');
+} else if (el.innerHTML.trim() == "High") {
+el.classList.add(component + '-high');
+} else if (el.innerHTML.trim() == "Highest") {
+el.classList.add(component + '-highest');
+} else {
+el.classList.add('category-color-error');
+}})
+
+let progressBar = sidebar.querySelector('.progress-' + component)
+console.log(progressBar)
+let classes = [component + "-lowest-bg-color", component + "-low-bg-color", component + "-moderate-bg-color", component + "-high-bg-color", component + "-highest-bg-color"]
+   classes.forEach(class_ => {
+   progressBar.classList.remove(class_)
+   })
+progressBar.style.width = popup.getAttribute('data-' + component + '-pctl').trim() + "%"
+category = popup.getAttribute('data-' + component + '-category').trim()
+if (category == "Lowest") {
+    progressBar.classList.add(component + '-lowest-bg-color');
+} else if (category == "Low") {
+    progressBar.classList.add(component + '-low-bg-color');
+} else if (category == "Moderate") {
+    progressBar.classList.add(component + '-moderate-bg-color');
+} else if (category == "High") {
+    progressBar.classList.add(component + '-high-bg-color');
+} else if (category.trim() == "Highest") {
+    progressBar.classList.add(component + '-highest-bg-color');
+} else {
+    progressBar.classList.add('category-color-error');
+}
+})
+
+let block = sidebar.querySelector('.square-icon')
+classes = [prefix + "-lowest-bg-color", prefix + "-low-bg-color", prefix + "-moderate-bg-color", prefix + "-high-bg-color", prefix + "-highest-bg-color"]
+   classes.forEach(class_ => {
+   block.classList.remove(class_)
+   })
+category = popup.getAttribute('data-' + prefix + '-category').trim()
+if (category == "Lowest") {
+    block.classList.add(prefix + '-lowest-bg-color');
+} else if (category == "Low") {
+    block.classList.add(prefix + '-low-bg-color');
+} else if (category == "Moderate") {
+    block.classList.add(prefix + '-moderate-bg-color');
+} else if (category == "High") {
+    block.classList.add(prefix + '-high-bg-color');
+} else if (category.trim() == "Highest") {
+    block.classList.add(prefix + '-highest-bg-color');
+} else {
+    block.classList.add('category-color-error');
+}
+
+
+      })})})})
+```
+<span style='float: right; font-size: 12px;'>Catalyst California (formerly Advancement Project California); Justice Equity Services Index; <u>[catalystcalifornia.org](https://www.catalystcalifornia.org/campaign-tools/maps-and-data/justice-equity-services-index)</u>, 2021.</span style>
